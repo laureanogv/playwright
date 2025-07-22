@@ -14,6 +14,12 @@ export class CampañasTMS {
     private readonly campañaRealizadaButton: Locator
     private readonly crearCampañaButton: Locator
 
+    // Locators detalle campaña
+    private readonly cancelarCampañaButton: Locator
+    private readonly siCancelarCampañaButton: Locator
+    private readonly pausarCampañaButton: Locator
+    private readonly siPausarCampañaButton: Locator
+
     // Locators de campos del formulario
     private readonly nombreCampañaInput: Locator
     private readonly fechaCampañaInput: Locator
@@ -42,6 +48,10 @@ export class CampañasTMS {
         this.terminalSelectButton = page.getByRole('button', { name: 'Seleccionar' });
         this.guardarCampañaButton = page.getByRole('button', { name: 'Guardar' });
         this.siCrearCampañaButton = page.getByRole('button', { name: 'Si, crear' });
+        this.cancelarCampañaButton = page.getByRole('button', { name: 'Cancelar' });
+        this.siCancelarCampañaButton = page.getByRole('button', { name: 'Si, cancelar campaña' });
+        this.pausarCampañaButton = page.getByRole('button', { name: 'Pausar' });
+        this.siPausarCampañaButton = page.getByRole('button', { name: 'Si, pausar' });
     }
 
     /**
@@ -89,13 +99,13 @@ export class CampañasTMS {
         await this.seleccionarTerminalesButton.click()
     }
 
-      /**
-   * Flujo completo para crear una campaña desde UI.
-   * @param nombre Nombre de la campaña.
-   * @param fecha Fecha de ejecución.
-   * @param version Versión de software.
-   * @param terminal ID de terminal a seleccionar.
-   */
+    /**
+ * Flujo completo para crear una campaña desde UI.
+ * @param nombre Nombre de la campaña.
+ * @param fecha Fecha de ejecución.
+ * @param version Versión de software.
+ * @param terminal ID de terminal a seleccionar.
+ */
     async crearCampaña(nombre: string, fecha: string, version: string, terminal: string) {
         await this.clickOnCrearCampaña();
         await this.fillNombreCampaña(nombre);
@@ -106,10 +116,10 @@ export class CampañasTMS {
         await this.clickOnSiCrearCampañaButton();
     }
 
-      /**
-   * Selecciona una terminal específica por ID dentro de la tabla.
-   * @param terminalId Texto visible del terminal.
-   */
+    /**
+ * Selecciona una terminal específica por ID dentro de la tabla.
+ * @param terminalId Texto visible del terminal.
+ */
     async seleccionarTerminal(terminalId: string) {
         await this.terminalCheck.first().waitFor({ state: 'visible', timeout: 5000 });
         const totalFilas = await this.terminalCheck.count();
@@ -128,67 +138,71 @@ export class CampañasTMS {
         await this.terminalSelectButton.click();
     }
 
-      /**
-   * Hace clic en el botón "Guardar campaña".
-   */
+    /**
+ * Hace clic en el botón "Guardar campaña".
+ */
     async clickOnGuardarCampaña() {
         await this.guardarCampañaButton.click()
     }
 
-      /**
-   * Confirma la creación haciendo clic en "Sí, crear".
-   */
+    /**
+ * Confirma la creación haciendo clic en "Sí, crear".
+ */
     async clickOnSiCrearCampañaButton() {
         await this.siCrearCampañaButton.click()
     }
 
-      /**
-   * Obtiene los datos de una campaña ya creada buscando por nombre.
-   * @param nombreCampaña Nombre a buscar.
-   * @returns Detalles de la campaña: comercios, software, terminales, actualización.
-   */
-      async obtenerDatosCampaña(nombreCampaña: string): Promise<{
+    /**
+ * Obtiene los datos de una campaña ya creada buscando por nombre.
+ * @param nombreCampaña Nombre a buscar.
+ * @returns Detalles de la campaña: comercios, software, terminales, actualización.
+ */
+    async obtenerDatosCampaña(nombreCampaña: string): Promise<{
         comercios: string;
         software: string;
         terminales: string;
         actualizacion: string;
-      }> {
-        const campañasLocator = this.guardarCampañaButton
-          .page()
-          .locator('h6');
-      
-        const total = await campañasLocator.count();
-      
-        for (let i = 0; i < total; i++) {
-          const campaña = campañasLocator.nth(i);
-          const texto = await campaña.textContent();
-          const normalizado = texto?.replace(/\s+/g, ' ').trim().toLowerCase();
-          const comparado = nombreCampaña.toLowerCase();
-      
-          if (normalizado?.includes(comparado)) {
-            const contenedor = campaña.locator('xpath=ancestor::div[contains(@class, "MuiPaper-root")]');
-            const detalles = contenedor.locator('p');
-      
-            const datos = await detalles.allTextContents();
-      
-            const extraerValor = (linea: string) => linea.split(':')[1]?.trim() || '';
-      
-            return {
-              comercios: extraerValor(datos[0]),
-              software: extraerValor(datos[1]),
-              terminales: extraerValor(datos[2]),
-              actualizacion: extraerValor(datos[3]),
-            };
-          }
-        }
-      
-        throw new Error(`Campaña "${nombreCampaña}" no encontrada`);
-      }
+    }> {
+        const page = this.guardarCampañaButton.page();
 
-      /**
-   * Consulta campañas activas (IN_PROGRESS o PAUSED) vía API.
-   * @returns Respuesta JSON con campañas activas.
-   */
+        // Espera 1 segundo para dar tiempo a que se renderice la campaña recién creada
+        await page.waitForTimeout(1000);
+
+        const campañasLocator = page.locator('h6');
+
+        const total = await campañasLocator.count();
+
+        for (let i = 0; i < total; i++) {
+            const campaña = campañasLocator.nth(i);
+            const texto = await campaña.textContent();
+            const normalizado = texto?.replace(/\s+/g, ' ').trim().toLowerCase();
+            const comparado = nombreCampaña.toLowerCase();
+
+            if (normalizado?.includes(comparado)) {
+                const contenedor = campaña.locator('xpath=ancestor::div[contains(@class, "MuiPaper-root")]');
+                const detalles = contenedor.locator('p');
+
+                const datos = await detalles.allTextContents();
+
+                const extraerValor = (linea: string) => linea.split(':')[1]?.trim() || '';
+
+                return {
+                    comercios: extraerValor(datos[0]),
+                    software: extraerValor(datos[1]),
+                    terminales: extraerValor(datos[2]),
+                    actualizacion: extraerValor(datos[3]),
+                };
+            }
+        }
+
+        await page.screenshot({ path: 'campaña_no_encontrada.png' });
+        throw new Error(`Campaña "${nombreCampaña}" no encontrada.`);
+    }
+
+    /**
+ * Consulta campañas activas (IN_PROGRESS o PAUSED) vía API.
+ * @returns Respuesta JSON con campañas activas.
+ */
     async getCampañasActivas(): Promise<any> {
         const token = await this.guardarCampañaButton.page().evaluate(() =>
             localStorage.getItem('access_token')
@@ -231,23 +245,28 @@ export class CampañasTMS {
         return await response.json();
     }
 
-      /**
-   * Elimina una campaña buscándola por nombre y haciendo POST a su endpoint de cancelación.
-   * @param nombreCampaña Nombre exacto de la campaña.
-   */
-    async eliminarCampaña(nombreCampaña: string): Promise<void> {
+    /**
+ * Elimina una campaña buscándola por nombre y haciendo POST a su endpoint de cancelación.
+ * @param nombreCampaña Nombre exacto de la campaña.
+ */
+    async eliminarCampañaBack(nombreCampaña: string): Promise<void> {
+        const page = this.guardarCampañaButton.page();
+
+        // Esperar que el <header> esté visible
+        await page.waitForSelector('header', { state: 'visible', timeout: 10000 });
+
         const token = await this.guardarCampañaButton.page().evaluate(() =>
             localStorage.getItem('access_token')
         );
-
-        const jwt = await Utils.dToken(token || '');
 
         if (!token) {
             throw new Error('No se encontró el accessToken en localStorage');
         }
 
-        const valor = await this.getCampañasActivas();
-        let id = valor.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
+        const jwt = await Utils.dToken(token || '');
+
+        const campañas = await this.getCampañasActivas();
+        let id = campañas.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
         if (id) {
             const response = await this.request.post(
                 'https://tms.eldar-solutions.com/api/api/campaign/' + id + '/cancel',
@@ -277,7 +296,121 @@ export class CampañasTMS {
 
     }
 
+    /**
+   * Crea una campaña buscándola por nombre y haciendo POST a su endpoint de cancelación.
+   * @param nombreCampaña Nombre exacto de la campaña.
+   * @param fecha Fecha en formto AAAA-MM-DD.
+   */
+    async crearCampañaBack(nombreCampaña: string, fecha: string): Promise<void> {
+        const token = await this.guardarCampañaButton.page().evaluate(() =>
+            localStorage.getItem('access_token')
+        );
+
+        const jwt = await Utils.dToken(token || '');
+
+        if (!token) {
+            throw new Error('No se encontró el accessToken en localStorage');
+        }
+
+        const valor = await this.getCampañasActivas();
+        let id = valor.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
 
 
+
+        if (id) {
+            throw new Error('Ya existe la campaña');
+        }
+
+            const response = await this.request.post(
+                'https://tms.eldar-solutions.com/api/api/campaign/new/terminals',
+                {
+                    headers: {
+                        Authorization: `Bearer ${jwt}`,
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json, text/plain, */*',
+                        Referer: 'https://tms.eldar-solutions.com/campa%C3%B1as',
+                        'User-Agent':
+                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+                        'sec-ch-ua':
+                            '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+                        'sec-ch-ua-mobile': '?0',
+                        'sec-ch-ua-platform': '"Windows"',
+                        'Sec-Fetch-Site': 'same-origin',
+                        'Sec-Fetch-Mode': 'cors',
+                        'Sec-Fetch-Dest': 'empty',
+                        'Accept-Language': 'es-419,es;q=0.9',
+                    },
+                    data: {
+                        date: fecha,
+                        softwareVersionId: 'a5809535-3f64-4064-9052-6d9482ee62c5',
+                        campaignName: nombreCampaña,
+                        terminalIds: ['168edd83-34b6-11f0-8977-0242ac170002'],
+                    },
+                }
+            )
+            const resultado = await response.json();
+            //console.log('Campaña creada:', resultado);
+        
+
+    }
+
+    /**
+ * Busca el botón de acción asociado a una campaña por nombre.
+ * Retorna el Locator del botón que contiene el ícono ArrowRight dentro del bloque de campaña.
+ *
+ * @param nombreCampaña - Nombre de la campaña a buscar.
+ * @returns Locator del botón correspondiente.
+ */
+    async clickDetalleCampañaEnCurso(nombreCampaña: string) {
+        const page = this.guardarCampañaButton.page();
+
+        // Espera 1 segundo para dar tiempo a que se renderice la campaña recién creada
+        await page.waitForTimeout(1500);
+
+        const campañasLocator = page.locator('h6');
+
+        const total = await campañasLocator.count();
+
+        for (let i = 0; i < total; i++) {
+            const campaña = campañasLocator.nth(i);
+            const texto = await campaña.textContent();
+            const normalizado = texto?.replace(/\s+/g, ' ').trim().toLowerCase();
+            const comparado = nombreCampaña.toLowerCase();
+
+
+            if (normalizado?.includes(comparado)) {
+                // Accede al contenedor raíz de la campaña
+                const contenedor = await campaña.locator('xpath=ancestor::div[contains(@class, "MuiPaper-root")]');
+                console.log('Contenedor encontrado:', contenedor);
+                // Localiza el botón asociado al ícono de flecha (ArrowRight)
+                const boton = contenedor.getByLabel('next');
+                await boton.waitFor({ state: 'visible', timeout: 5000 });
+                await boton.click();
+                return;
+            }
+        }
+
+        throw new Error(`No se encontró el botón para la campaña "${nombreCampaña}"`);
+    }
+
+    async clickOnCancelarCampaña() {
+        await this.cancelarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.cancelarCampañaButton.click()
+    }
+
+    async clickOnSiCancelarCampaña() {
+        await this.siCancelarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.siCancelarCampañaButton.click()
+    }
+
+    async clickOnPausarCampaña() {
+        await this.pausarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.pausarCampañaButton.click()
+    }
+
+    async clickOnSiPausarCampaña() {
+        await this.siPausarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.siPausarCampañaButton.click()
+    }
 
 }

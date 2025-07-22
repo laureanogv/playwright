@@ -15,10 +15,11 @@ test('crear-campaña', async ({ page, request }) => {
   const nuevaCampaña = new CampañasTMS(page, request);
   const tmsAPI = new TmsBackend(nuevaCampaña);
 
-  const nombreCampaña = 'Campaña de prueba';
+  const nombreCampaña = 'Campaña de prueba autom';
 
   await page.goto('https://tms.eldar-solutions.com/');
   await page.waitForSelector('h5');
+
 
   // Ingresamos las credenciales
   await login.loginWithCredentials("testtmsauto@yopmail.com", "Clave123!");
@@ -30,41 +31,42 @@ test('crear-campaña', async ({ page, request }) => {
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);
 
-  //eliminamos la campaña si 
-  await tmsAPI.eliminarCampañaBack(nombreCampaña)
-
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
 
-  // obtener la fecha actual en formato DDMMAAAA
-  let fecha = await Utils.obtenerFechaActual('DDMMYYYY')
-  
-  // hacemos click en el boton crear campaña
-  await nuevaCampaña.crearCampaña(nombreCampaña, fecha, "Eldar v0", "2");
+   // obtener la fecha actual en formato DDMMAAAA
+   let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
 
-  // leemos el mensaje de confirmación
+  //creamos la campaña
+  await tmsAPI.crearCampañaBack(nombreCampaña, fecha)
+
+  
+  //seleccionamos el detalle de la campaña
+  await nuevaCampaña.clickDetalleCampañaEnCurso(nombreCampaña)
+
+  //cancelamos la campaña
+  await nuevaCampaña.clickOnCancelarCampaña()
+  await nuevaCampaña.clickOnSiCancelarCampaña()
+
   const snackbar = page.getByRole('alert');
   const mensaje = await snackbar.textContent();
 
-  // obtenemos los datos de la campaña creada
-  const datos = await nuevaCampaña.obtenerDatosCampaña(nombreCampaña)
+
+  let errorCapturado: Error | null = null;
+  try {
+    await nuevaCampaña.obtenerDatosCampaña(nombreCampaña);
+  } catch (error) {
+    errorCapturado = error as Error;
+  }
 
   // validamos el mensaje de confirmación
-  expect(mensaje).toBe('La campaña '+nombreCampaña.toUpperCase()+' se ha creado correctamente.');
+  expect(mensaje).toBe('Campaña cancelada con éxito');
 
   // Validamos que el titulo sea correcto
   await expect(page).toHaveTitle(/TMS/);
 
   // Validamos que el software sea correcto
-  expect(datos.software).toBe('Eldar');
-
-  // Validamos que la cantidad de terminales sea correcta
-  expect(datos.terminales).toBe('1');
-
-  // Validamos que la cantidad de comercios sea correcta
-  expect(datos.comercios).toBe('1');
-
-
+  //expect(errorCapturado).toBe(`Campaña "${nombreCampaña}" no encontrada.`);
 
 });
 

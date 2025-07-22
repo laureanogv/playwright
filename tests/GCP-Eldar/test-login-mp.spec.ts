@@ -26,7 +26,6 @@ test('login', async ({ page }) => {
   const welcome = await page.locator('h1');
   await expect(welcome).toContainText('Hola, Automation Test')
 
-  await page.waitForTimeout(1000);
 
 });
 
