@@ -9,6 +9,7 @@ import { TmsBackend } from '../pom/TMSBackend';
 test('crear-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
 
+
   const login = new LoginMP(page);
   const df = new DobleFactor(page);
   const menu = new MenuTMS(page);
@@ -31,16 +32,15 @@ test('crear-campaña', async ({ page, request }) => {
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);
 
+  // obtener la fecha actual en formato DDMMAAAA
+  let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
+
+  //creamos la campaña
+  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 2)
+
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
 
-   // obtener la fecha actual en formato DDMMAAAA
-   let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
-
-  //creamos la campaña
-  await tmsAPI.crearCampañaBack(nombreCampaña, fecha)
-
-  
   //seleccionamos el detalle de la campaña
   await nuevaCampaña.clickDetalleCampañaEnCurso(nombreCampaña)
 
