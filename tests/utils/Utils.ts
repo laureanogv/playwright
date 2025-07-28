@@ -17,7 +17,7 @@ export class Utils {
  */
     static async dobleFactor1(url: string, page: Page): Promise<string> {
         const newTab = await page.context().newPage();
-        await page.waitForTimeout(8000);
+        await page.waitForTimeout(11000);
         await newTab.goto(url, { timeout: 60000 }); // 60 segundos
 
         let datoExtraido = '';

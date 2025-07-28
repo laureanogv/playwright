@@ -60,12 +60,88 @@ export class TmsBackend {
     return await response.json();
   }
 
+
+  // crear funcion para encontrar la campaña en los id obtenidos en getCampañasActivas segun un id de terminal pasado por parametro
+  async existeTerminalEnCampaña(idTerminal: number): Promise<string | null> {
+    const jwt = await this.getJwt();
+    const campañas = await this.getCampañasActivas();
+  
+    for (const campaña of campañas.content) {
+      const id = campaña.id;
+  
+      const response = await this.request.get(
+        `https://tms.eldar-solutions.com/api/api/campaign/${id}/details?idCampaign=${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+  
+      if (!response.ok()) {
+        console.warn(`❌ No se pudo obtener detalles para campaña ID ${id}`);
+        continue;
+      }
+  
+      const detalles = await response.json();
+  
+      const terminalEncontrado = detalles?.merchants?.some(merchant =>
+        merchant.terminals?.some(terminal => terminal.terminalNumber === idTerminal)
+      );
+  
+      if (terminalEncontrado) {
+        console.log(`✅ Terminal ${idTerminal} encontrada en campaña: ${detalles.name}`);
+        return detalles.name || null;
+      }
+    }
+  
+    return null; // No se encontró la terminal en ninguna campaña
+  }
+  
+
+  
+  async pausarCampañaBack(nombreCampaña: string): Promise<void> {
+    await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
+
+    const jwt = await this.getJwt();
+    const campañas = await this.getCampañasActivas();
+    const id = campañas.content.find(c => c.name.toUpperCase() === nombreCampaña.toUpperCase())?.id;
+
+    if (!id) return;
+
+    const response = await this.request.post(
+      `https://tms.eldar-solutions.com/api/api/campaign/${id}/pause`,
+      {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json, text/plain, */*',
+          Referer: 'https://tms.eldar-solutions.com/campa%C3%B1as',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)...',
+          'sec-ch-ua': '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"',
+          'Sec-Fetch-Site': 'same-origin',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Dest': 'empty',
+          'Accept-Language': 'es-419,es;q=0.9',
+        },
+      }
+    );
+
+    //await this.page.waitForTimeout(3000);
+    const resultado = await response.json();
+    // Podés retornar el resultado o hacer logging si querés.
+  }
+
+
   async eliminarCampañaBack(nombreCampaña: string): Promise<void> {
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
 
     const jwt = await this.getJwt();
     const campañas = await this.getCampañasActivas();
-    const id = campañas.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
+    const id = campañas.content.find(c => c.name.toUpperCase() === nombreCampaña.toUpperCase())?.id;
 
     if (!id) return;
 
@@ -93,12 +169,18 @@ export class TmsBackend {
     // Podés retornar el resultado o hacer logging si querés.
   }
 
-  async crearCampañaBack(nombreCampaña: string, fecha: string): Promise<void> {
+  async crearCampañaBack(nombreCampaña: string, fecha: string, terminal: number): Promise<void> {
     const jwt = await this.getJwt();
     const campañas = await this.getCampañasActivas();
-    const existe = campañas.content.find(c => c.name === nombreCampaña.toUpperCase());
+    const existe_campaña = campañas.content.find(c => c.name.toUpperCase() === nombreCampaña.toUpperCase());
 
-    if (existe) throw new Error("Ya existe la campaña");
+    if (existe_campaña) throw new Error("Ya existe la campaña");
+
+    const existe_terminal=await this.existeTerminalEnCampaña(terminal);
+
+    if (existe_terminal) {
+      await this.eliminarCampañaBack(existe_terminal);
+    }
 
     const response = await this.request.post(
       'https://tms.eldar-solutions.com/api/api/campaign/new/terminals',

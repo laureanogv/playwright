@@ -10,11 +10,10 @@ test('login', async ({ page }) => {
 
   const login = new LoginMP(page);
   const df = new DobleFactor(page);
-  const util = new Utils();
 
   await login.loginWithCredentials("testtmsauto@yopmail.com","Clave123!");
 
-  let token = await util.dobleFactor1("https://yopmail.com/?testtmsauto", page)
+  let token = await Utils.dobleFactor1("https://yopmail.com/?testtmsauto", page)
 
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);

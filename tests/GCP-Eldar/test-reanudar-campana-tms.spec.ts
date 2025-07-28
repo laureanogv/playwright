@@ -6,7 +6,7 @@ import { MenuTMS } from '../pom/MenuTMS';
 import { CampañasTMS } from '../pom/CampañasTMS';
 import { TmsBackend } from '../pom/TMSBackend';
 
-test('pausar-campaña', async ({ page, request }) => {
+test('reanudar-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
 
   const login = new LoginMP(page);
@@ -15,7 +15,7 @@ test('pausar-campaña', async ({ page, request }) => {
   const nuevaCampaña = new CampañasTMS(page, request);
   const tmsAPI = new TmsBackend(nuevaCampaña);
 
-  const nombreCampaña = 'Autom pausar campaña';
+  const nombreCampaña = 'Autom reanudar campaña';
 
   await page.goto('https://tms.eldar-solutions.com/');
   await page.waitForSelector('h5');
@@ -31,28 +31,30 @@ test('pausar-campaña', async ({ page, request }) => {
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);
 
+    // obtener la fecha actual en formato DDMMAAAA
+    let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
 
-  // obtener la fecha actual en formato DDMMAAAA
-  let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
-
-  // preguntamos si existe una campala con nuestra terminal
-
-  //eliminamos la campaña si 
-  await tmsAPI.eliminarCampañaBack(nombreCampaña)
-
-  //creamos la campaña
-  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 1)
+    //eliminamos la campaña si 
+    await tmsAPI.eliminarCampañaBack(nombreCampaña)
+  
+    //creamos la campaña
+    await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 1)
+  
+    // pausamos la campaña
+    await tmsAPI.pausarCampañaBack(nombreCampaña);
 
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
 
-
+  
   //seleccionamos el detalle de la campaña
   await nuevaCampaña.clickDetalleCampañaEnCurso(nombreCampaña)
 
-  //cancelamos la campaña
-  await nuevaCampaña.clickOnPausarCampaña()
-  await nuevaCampaña.clickOnSiPausarCampaña()
+
+
+  //reanudamos la campaña
+  await nuevaCampaña.clickOnReanudarCampaña()
+  await nuevaCampaña.clickOnSiReanudarCampaña()
 
   const snackbar = page.getByRole('alert');
   const mensaje = await snackbar.textContent();
@@ -66,7 +68,7 @@ test('pausar-campaña', async ({ page, request }) => {
   }
 
   // validamos el mensaje de confirmación
-  expect(mensaje).toBe('Campaña pausada con éxito');
+  expect(mensaje).toBe('Campaña  reanudada con éxito');
 
   // Validamos que el titulo sea correcto
   await expect(page).toHaveTitle(/TMS/);

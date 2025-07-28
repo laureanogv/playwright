@@ -19,6 +19,8 @@ export class CampañasTMS {
     private readonly siCancelarCampañaButton: Locator
     private readonly pausarCampañaButton: Locator
     private readonly siPausarCampañaButton: Locator
+    private readonly reanudarCampañaButton: Locator
+    private readonly siReanudarCampañaButton: Locator
 
     // Locators de campos del formulario
     private readonly nombreCampañaInput: Locator
@@ -52,6 +54,8 @@ export class CampañasTMS {
         this.siCancelarCampañaButton = page.getByRole('button', { name: 'Si, cancelar campaña' });
         this.pausarCampañaButton = page.getByRole('button', { name: 'Pausar' });
         this.siPausarCampañaButton = page.getByRole('button', { name: 'Si, pausar' });
+        this.reanudarCampañaButton = page.getByRole('button', { name: 'Reanudar' });
+        this.siReanudarCampañaButton = page.getByRole('button', { name: 'Si, reanudar' });
     }
 
     /**
@@ -199,160 +203,7 @@ export class CampañasTMS {
         throw new Error(`Campaña "${nombreCampaña}" no encontrada.`);
     }
 
-    /**
- * Consulta campañas activas (IN_PROGRESS o PAUSED) vía API.
- * @returns Respuesta JSON con campañas activas.
- */
-    async getCampañasActivas(): Promise<any> {
-        const token = await this.guardarCampañaButton.page().evaluate(() =>
-            localStorage.getItem('access_token')
-        );
 
-        const jwt = await Utils.dToken(token || '');
-
-        if (!token) {
-            throw new Error('No se encontró el accessToken en localStorage');
-        }
-
-        const response = await this.request.get(
-            'https://tms.eldar-solutions.com/api/api/campaign/?page=0&size=5&status=IN_PROGRESS&status=PAUSED',
-            {
-                headers: {
-                    Authorization: `Bearer ${jwt}`,
-                    'Content-Type': 'application/json',
-                    Accept: 'application/json, text/plain, */*',
-                    Referer: 'https://tms.eldar-solutions.com/campa%C3%B1as',
-                    'User-Agent':
-                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-                    'sec-ch-ua':
-                        '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-                    'sec-ch-ua-mobile': '?0',
-                    'sec-ch-ua-platform': '"Windows"',
-                    'Sec-Fetch-Site': 'same-origin',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Accept-Language': 'es-419,es;q=0.9',
-                },
-            }
-        );
-
-        if (!response.ok()) {
-            const body = await response.text();
-            console.error('Respuesta del servidor:', body);
-            throw new Error(`Error ${response.status()}: ${response.statusText()}`);
-        }
-
-        return await response.json();
-    }
-
-    /**
- * Elimina una campaña buscándola por nombre y haciendo POST a su endpoint de cancelación.
- * @param nombreCampaña Nombre exacto de la campaña.
- */
-    async eliminarCampañaBack(nombreCampaña: string): Promise<void> {
-        const page = this.guardarCampañaButton.page();
-
-        // Esperar que el <header> esté visible
-        await page.waitForSelector('header', { state: 'visible', timeout: 10000 });
-
-        const token = await this.guardarCampañaButton.page().evaluate(() =>
-            localStorage.getItem('access_token')
-        );
-
-        if (!token) {
-            throw new Error('No se encontró el accessToken en localStorage');
-        }
-
-        const jwt = await Utils.dToken(token || '');
-
-        const campañas = await this.getCampañasActivas();
-        let id = campañas.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
-        if (id) {
-            const response = await this.request.post(
-                'https://tms.eldar-solutions.com/api/api/campaign/' + id + '/cancel',
-                {
-                    headers: {
-                        Authorization: `Bearer ${jwt}`,
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json, text/plain, */*',
-                        Referer: 'https://tms.eldar-solutions.com/campa%C3%B1as',
-                        'User-Agent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-                        'sec-ch-ua':
-                            '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-                        'sec-ch-ua-mobile': '?0',
-                        'sec-ch-ua-platform': '"Windows"',
-                        'Sec-Fetch-Site': 'same-origin',
-                        'Sec-Fetch-Mode': 'cors',
-                        'Sec-Fetch-Dest': 'empty',
-                        'Accept-Language': 'es-419,es;q=0.9',
-                    },
-                }
-
-            )
-            const resultado = await response.json();
-
-        }
-
-    }
-
-    /**
-   * Crea una campaña buscándola por nombre y haciendo POST a su endpoint de cancelación.
-   * @param nombreCampaña Nombre exacto de la campaña.
-   * @param fecha Fecha en formto AAAA-MM-DD.
-   */
-    async crearCampañaBack(nombreCampaña: string, fecha: string): Promise<void> {
-        const token = await this.guardarCampañaButton.page().evaluate(() =>
-            localStorage.getItem('access_token')
-        );
-
-        const jwt = await Utils.dToken(token || '');
-
-        if (!token) {
-            throw new Error('No se encontró el accessToken en localStorage');
-        }
-
-        const valor = await this.getCampañasActivas();
-        let id = valor.content.find(c => c.name === nombreCampaña.toUpperCase())?.id;
-
-
-
-        if (id) {
-            throw new Error('Ya existe la campaña');
-        }
-
-            const response = await this.request.post(
-                'https://tms.eldar-solutions.com/api/api/campaign/new/terminals',
-                {
-                    headers: {
-                        Authorization: `Bearer ${jwt}`,
-                        'Content-Type': 'application/json',
-                        Accept: 'application/json, text/plain, */*',
-                        Referer: 'https://tms.eldar-solutions.com/campa%C3%B1as',
-                        'User-Agent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-                        'sec-ch-ua':
-                            '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"',
-                        'sec-ch-ua-mobile': '?0',
-                        'sec-ch-ua-platform': '"Windows"',
-                        'Sec-Fetch-Site': 'same-origin',
-                        'Sec-Fetch-Mode': 'cors',
-                        'Sec-Fetch-Dest': 'empty',
-                        'Accept-Language': 'es-419,es;q=0.9',
-                    },
-                    data: {
-                        date: fecha,
-                        softwareVersionId: 'a5809535-3f64-4064-9052-6d9482ee62c5',
-                        campaignName: nombreCampaña,
-                        terminalIds: ['168edd83-34b6-11f0-8977-0242ac170002'],
-                    },
-                }
-            )
-            const resultado = await response.json();
-            //console.log('Campaña creada:', resultado);
-        
-
-    }
 
     /**
  * Busca el botón de acción asociado a una campaña por nombre.
@@ -411,6 +262,16 @@ export class CampañasTMS {
     async clickOnSiPausarCampaña() {
         await this.siPausarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
         await this.siPausarCampañaButton.click()
+    }
+
+    async clickOnReanudarCampaña() {
+        await this.reanudarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.reanudarCampañaButton.click()
+    }
+
+    async clickOnSiReanudarCampaña() {
+        await this.siReanudarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.siReanudarCampañaButton.click()
     }
 
 }
