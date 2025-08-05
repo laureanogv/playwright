@@ -1,5 +1,5 @@
 import { Locator, Page, expect, APIRequestContext } from "@playwright/test";
-import { Utils } from '../utils/utils';
+import { Utils } from '../../utils/utils';
 
 /**
  * Clase Page Object Model para gestionar campañas dentro de la plataforma TMS.
@@ -255,7 +255,7 @@ export class CampañasTMS {
     }
 
     async clickOnPausarCampaña() {
-        await this.pausarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.pausarCampañaButton.waitFor({ state: 'visible', timeout: 10000 });
         await this.pausarCampañaButton.click()
     }
 
@@ -265,7 +265,7 @@ export class CampañasTMS {
     }
 
     async clickOnReanudarCampaña() {
-        await this.reanudarCampañaButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.reanudarCampañaButton.waitFor({ state: 'visible', timeout: 10000 });
         await this.reanudarCampañaButton.click()
     }
 

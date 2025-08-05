@@ -1,6 +1,6 @@
 import { APIRequestContext, Page } from "@playwright/test";
 import { CampañasTMS } from "./CampañasTMS";
-import { Utils } from "../utils/utils";
+import { Utils } from "../../utils/utils";
 
 /**
  * Clase dedicada a operaciones backend para campañas TMS.

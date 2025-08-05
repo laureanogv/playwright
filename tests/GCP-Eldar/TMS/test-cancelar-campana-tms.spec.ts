@@ -1,13 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { LoginMP } from '../pom/Login';
-import { DobleFactor } from '../pom/DobleFactor';
-import { Utils } from '../utils/utils';
-import { MenuTMS } from '../pom/MenuTMS';
-import { CampañasTMS } from '../pom/CampañasTMS';
-import { TmsBackend } from '../pom/TMSBackend';
+import { LoginMP } from '../../pom/Login';
+import { DobleFactor } from '../../pom/DobleFactor';
+import { Utils } from '../../utils/utils';
+import { MenuTMS } from '../../pom/TMS/MenuTMS';
+import { CampañasTMS } from '../../pom/TMS/CampañasTMS';
+import { TmsBackend } from '../../pom/TMS/TMSBackend';
 
-test('reanudar-campaña', async ({ page, request }) => {
+test('crear-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
+
 
   const login = new LoginMP(page);
   const df = new DobleFactor(page);
@@ -15,7 +16,7 @@ test('reanudar-campaña', async ({ page, request }) => {
   const nuevaCampaña = new CampañasTMS(page, request);
   const tmsAPI = new TmsBackend(nuevaCampaña);
 
-  const nombreCampaña = 'Autom reanudar campaña';
+  const nombreCampaña = 'Campaña de prueba autom';
 
   await page.goto('https://tms.eldar-solutions.com/');
   await page.waitForSelector('h5');
@@ -31,30 +32,21 @@ test('reanudar-campaña', async ({ page, request }) => {
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);
 
-    // obtener la fecha actual en formato DDMMAAAA
-    let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
+  // obtener la fecha actual en formato DDMMAAAA
+  let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
 
-    //eliminamos la campaña si 
-    await tmsAPI.eliminarCampañaBack(nombreCampaña)
-  
-    //creamos la campaña
-    await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 1)
-  
-    // pausamos la campaña
-    await tmsAPI.pausarCampañaBack(nombreCampaña);
+  //creamos la campaña
+  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 2)
 
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
 
-  
   //seleccionamos el detalle de la campaña
   await nuevaCampaña.clickDetalleCampañaEnCurso(nombreCampaña)
 
-
-
-  //reanudamos la campaña
-  await nuevaCampaña.clickOnReanudarCampaña()
-  await nuevaCampaña.clickOnSiReanudarCampaña()
+  //cancelamos la campaña
+  await nuevaCampaña.clickOnCancelarCampaña()
+  await nuevaCampaña.clickOnSiCancelarCampaña()
 
   const snackbar = page.getByRole('alert');
   const mensaje = await snackbar.textContent();
@@ -68,7 +60,7 @@ test('reanudar-campaña', async ({ page, request }) => {
   }
 
   // validamos el mensaje de confirmación
-  expect(mensaje).toBe('Campaña  reanudada con éxito');
+  expect(mensaje).toBe('Campaña cancelada con éxito');
 
   // Validamos que el titulo sea correcto
   await expect(page).toHaveTitle(/TMS/);

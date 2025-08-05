@@ -1,14 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { LoginMP } from '../pom/Login';
-import { DobleFactor } from '../pom/DobleFactor';
-import { Utils } from '../utils/utils';
-import { MenuTMS } from '../pom/MenuTMS';
-import { CampañasTMS } from '../pom/CampañasTMS';
-import { TmsBackend } from '../pom/TMSBackend';
+import { LoginMP } from '../../pom/Login';
+import { DobleFactor } from '../../pom/DobleFactor';
+import { Utils } from '../../utils/utils';
+import { MenuTMS } from '../../pom/TMS/MenuTMS';
+import { CampañasTMS } from '../../pom/TMS/CampañasTMS';
+import { TmsBackend } from '../../pom/TMS/TMSBackend';
 
-test('crear-campaña', async ({ page, request }) => {
+test('pausar-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
-
 
   const login = new LoginMP(page);
   const df = new DobleFactor(page);
@@ -16,7 +15,7 @@ test('crear-campaña', async ({ page, request }) => {
   const nuevaCampaña = new CampañasTMS(page, request);
   const tmsAPI = new TmsBackend(nuevaCampaña);
 
-  const nombreCampaña = 'Campaña de prueba autom';
+  const nombreCampaña = 'Autom pausar campaña';
 
   await page.goto('https://tms.eldar-solutions.com/');
   await page.waitForSelector('h5');
@@ -32,21 +31,28 @@ test('crear-campaña', async ({ page, request }) => {
   // ingresamos el codigo de doble factor
   await df.loginWithCredentials(token);
 
+
   // obtener la fecha actual en formato DDMMAAAA
   let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
 
+  // preguntamos si existe una campala con nuestra terminal
+
+  //eliminamos la campaña si 
+  await tmsAPI.eliminarCampañaBack(nombreCampaña)
+
   //creamos la campaña
-  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 2)
+  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 1)
 
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
+
 
   //seleccionamos el detalle de la campaña
   await nuevaCampaña.clickDetalleCampañaEnCurso(nombreCampaña)
 
   //cancelamos la campaña
-  await nuevaCampaña.clickOnCancelarCampaña()
-  await nuevaCampaña.clickOnSiCancelarCampaña()
+  await nuevaCampaña.clickOnPausarCampaña()
+  await nuevaCampaña.clickOnSiPausarCampaña()
 
   const snackbar = page.getByRole('alert');
   const mensaje = await snackbar.textContent();
@@ -60,7 +66,7 @@ test('crear-campaña', async ({ page, request }) => {
   }
 
   // validamos el mensaje de confirmación
-  expect(mensaje).toBe('Campaña cancelada con éxito');
+  expect(mensaje).toBe('Campaña pausada con éxito');
 
   // Validamos que el titulo sea correcto
   await expect(page).toHaveTitle(/TMS/);

@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { LoginMP } from '../pom/Login';
-import { DobleFactor } from '../pom/DobleFactor';
-import { Utils } from '../utils/utils';
-import { MenuTMS } from '../pom/MenuTMS';
-import { CampañasTMS } from '../pom/CampañasTMS';
-import { TmsBackend } from '../pom/TMSBackend';
+import { LoginMP } from '../../pom/Login';
+import { DobleFactor } from '../../pom/DobleFactor';
+import { Utils } from '../../utils/utils';
+import { MenuTMS } from '../../pom/TMS/MenuTMS';
+import { CampañasTMS } from '../../pom/TMS/CampañasTMS';
+import { TmsBackend } from '../../pom/TMS/TMSBackend';
 
 test('crear-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test

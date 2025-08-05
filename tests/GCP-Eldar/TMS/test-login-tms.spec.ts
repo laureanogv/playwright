@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
-import { LoginMP } from '../pom/Login';
-import { DobleFactor } from '../pom/DobleFactor';
-import { Utils } from '../utils/utils';
+import { LoginMP } from '../../pom/Login';
+import { DobleFactor } from '../../pom/DobleFactor';
+import { Utils } from '../../utils/utils';
 
 test('login', async ({ page }) => {
   await page.goto('https://tms-eldar-sta.eldars.com.ar/');
