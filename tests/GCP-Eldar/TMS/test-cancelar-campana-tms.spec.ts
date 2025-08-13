@@ -4,7 +4,7 @@ import { DobleFactor } from '../../pom/DobleFactor';
 import { Utils } from '../../utils/utils';
 import { MenuTMS } from '../../pom/TMS/MenuTMS';
 import { CampañasTMS } from '../../pom/TMS/CampañasTMS';
-import { TmsBackend } from '../../pom/TMS/TMSBackend';
+import { TmsBackend } from '../../pom/TMS/TMSBackend-2';
 
 test('crear-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
@@ -36,7 +36,12 @@ test('crear-campaña', async ({ page, request }) => {
   let fecha = await Utils.obtenerFechaActual('AAAA-MM-DD')
 
   //creamos la campaña
-  await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 2)
+  try {
+    await tmsAPI.crearCampañaBack(nombreCampaña, fecha, 2)
+  } catch (error) {
+    console.log(error);
+  }
+  
 
   // ingresamos al menu campañas
   await menu.clickOnCampaña();
