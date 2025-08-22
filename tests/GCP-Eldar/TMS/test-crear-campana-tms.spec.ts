@@ -4,7 +4,7 @@ import { DobleFactor } from '../../pom/DobleFactor';
 import { Utils } from '../../utils/utils';
 import { MenuTMS } from '../../pom/TMS/MenuTMS';
 import { CampañasTMS } from '../../pom/TMS/CampañasTMS';
-import { TmsBackend } from '../../pom/TMS/TMSBackend';
+import { TmsBackend } from '../../pom/TMS/TMSBackend-2';
 
 test('crear-campaña', async ({ page, request }) => {
   test.setTimeout(90000); // 90 segundos para este test
@@ -32,6 +32,10 @@ test('crear-campaña', async ({ page, request }) => {
 
   //eliminamos la campaña si 
   await tmsAPI.eliminarCampañaBack(nombreCampaña)
+
+   // verificamos si existe la terminal en una campaña y la eliminamos 
+  await tmsAPI.eliminarCampañaBack(await tmsAPI.existeTerminalEnCampaña(2))  
+
 
   // ingresamos al menu campañas
   await menu.clickOnCampaña();

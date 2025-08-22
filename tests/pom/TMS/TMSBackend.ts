@@ -11,12 +11,19 @@ export class TmsBackend {
   private readonly request: APIRequestContext;
   private readonly campañas: CampañasTMS;
 
+   /**
+   * @param campañas Instancia de CampañasTMS para acceder a Page y APIRequestContext.
+   */
   constructor(campañas: CampañasTMS) {
     this.campañas = campañas;
     this.page = campañas['guardarCampañaButton'].page(); // Acceso indirecto al page
     this.request = campañas['request'];
   }
 
+    /**
+   * Obtiene el access token desde localStorage.
+   * @throws Error si no se encuentra el token.
+   */
   async getAccessToken(): Promise<string> {
     let token = await this.page.evaluate(() => localStorage.getItem('access_token'));
 
@@ -24,11 +31,20 @@ export class TmsBackend {
     return token;
   }
 
+   /**
+   * Decodifica el access token usando Utils.dToken.
+   * @returns JWT válido para autenticación.
+   */
   async getJwt(): Promise<string> {
     const token = await this.getAccessToken();
     return await Utils.dToken(token);
   }
 
+    /**
+   * Consulta campañas activas con estado IN_PROGRESS o PAUSED.
+   * @returns JSON con campañas activas.
+   * @throws Error si la respuesta HTTP no es exitosa.
+   */
   async getCampañasActivas(): Promise<any> {
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
 
@@ -64,7 +80,11 @@ export class TmsBackend {
   }
 
 
-  // crear funcion para encontrar la campaña en los id obtenidos en getCampañasActivas segun un id de terminal pasado por parametro
+    /**
+   * Verifica si un terminal está presente en alguna campaña activa.
+   * @param idTerminal Número del terminal físico.
+   * @returns Nombre de la campaña si se encuentra, o null si no existe.
+   */
   async existeTerminalEnCampaña(idTerminal: number): Promise<string | null> {
     const jwt = await this.getJwt();
     const campañas = await this.getCampañasActivas();
@@ -102,8 +122,10 @@ export class TmsBackend {
     return null; // No se encontró la terminal en ninguna campaña
   }
 
-
-
+  /**
+   * Pausa una campaña activa por nombre.
+   * @param nombreCampaña Nombre exacto de la campaña.
+   */
   async pausarCampañaBack(nombreCampaña: string): Promise<void> {
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
 
@@ -138,8 +160,16 @@ export class TmsBackend {
     // Podés retornar el resultado o hacer logging si querés.
   }
 
-
-  async eliminarCampañaBack(nombreCampaña: string): Promise<void> {
+  /**
+   * Elimina una campaña activa por nombre.
+   * @param nombreCampaña Nombre exacto de la campaña.
+   */
+  async eliminarCampañaBack(nombreCampaña: string | null): Promise<void> {
+    console.log("Eliminando campaña:", nombreCampaña);
+    if (nombreCampaña === null) {
+      console.warn("No se proporcionó un nombre de campaña para eliminar.");
+      return;
+    }
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
 
     const jwt = await this.getJwt();
@@ -172,21 +202,30 @@ export class TmsBackend {
     // Podés retornar el resultado o hacer logging si querés.
   }
 
+    /**
+   * Crea una nueva campaña con fecha y terminal.
+   * Si ya existe una campaña con ese nombre o terminal, las elimina primero.
+   * @param nombreCampaña Nombre de la campaña.
+   * @param fecha Fecha en formato YYYY-MM-DD.
+   * @param terminal Número de terminal físico.
+   */
   async crearCampañaBack(nombreCampaña: string, fecha: string, terminal: number): Promise<void> {
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
     const jwt = await this.getJwt();
     const campañas = await this.getCampañasActivas();
     const existe_campaña = campañas.content.find(c => c.name.toUpperCase() === nombreCampaña.toUpperCase());
 
-    if (existe_campaña) throw new Error("Ya existe la campaña");
-
-    const existe_terminal = await this.existeTerminalEnCampaña(terminal);
-
-    if (existe_terminal) {
-      await this.eliminarCampañaBack(existe_terminal);
+    if (existe_campaña) {
+      await this.eliminarCampañaBack(nombreCampaña);
     }
 
-    const id_terminal = await this.getTerminalDataBack(terminal)
+    // verificamos si existe la terminal en una campaña y la eliminamos
+    const existe_terminal = await this.existeTerminalEnCampaña(terminal);
+    
+    if (existe_terminal) {
+      console.log("Terminal existente en campaña:", existe_terminal);
+      await this.eliminarCampañaBack(existe_terminal);
+    }
 
 
     const response = await this.request.post(
@@ -219,6 +258,11 @@ export class TmsBackend {
     console.log("Campaña creada:", resultado);
   }
 
+  /**
+   * Obtiene el ID de un terminal específico.
+   * @param terminal Número del terminal físico.
+   * @returns ID del terminal.
+   */
   async getTerminalDataBack(terminal: number): Promise<string> {
     await this.page.waitForSelector('header', { state: 'visible', timeout: 10000 });
     const jwt = await this.getJwt();
